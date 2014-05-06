@@ -6,10 +6,16 @@ class Wechat::Api
 
   API_BASE = "https://api.weixin.qq.com/cgi-bin/"
   FILE_BASE = "http://file.api.weixin.qq.com/cgi-bin/"
+  OAUTH_BASE = "https://api.weixin.qq.com/sns/"
 
   def initialize appid, secret, token_file
     @client = Wechat::Client.new(API_BASE)
     @access_token = Wechat::AccessToken.new(@client, appid, secret, token_file)
+  end
+
+  def openid code
+    response = get("oauth2/access_token", params:{code: code, grant_type: "authorization_code", appid: access_token.appid, secret: access_token.secret}, base: OAUTH_BASE)
+    response["openid"]
   end
 
   def users
@@ -44,7 +50,7 @@ class Wechat::Api
   def custom_message_send message
     post "message/custom/send", message.to_json, content_type: :json
   end
-  
+
 
   protected
   def get path, headers={}
@@ -62,7 +68,7 @@ class Wechat::Api
     rescue Wechat::AccessTokenExpiredError => ex
       access_token.refresh
       retry unless (tries -= 1).zero?
-    end 
+    end
   end
 
 end
